@@ -1,0 +1,295 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/* ------------------------------------------------------------------ */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #080b14;
+  --background-secondary: #10172a;
+  --glass-primary: rgba(255, 255, 255, 0.07);
+  --glass-secondary: rgba(255, 255, 255, 0.045);
+  --glass-border: rgba(255, 255, 255, 0.13);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  /* Opaque-ish surface used when backdrop-filter is unsupported */
+  --glass-solid: rgba(22, 29, 50, 0.94);
+
+  --accent-blue: #7895ff;
+  --accent-purple: #a78bfa;
+  --accent-cyan: #67ddf5;
+  --success: #5de4c7;
+  --warning: #ffca75;
+  --danger: #ff6685;
+
+  --text-primary: #f7f8fc;
+  --text-secondary: #a1a9bc;
+
+  --shadow-1: rgba(0, 0, 0, 0.25);
+  --shadow-2: rgba(0, 0, 0, 0.45);
+  --shadow-3: rgba(0, 0, 0, 0.5);
+  --reflect-top: rgba(255, 255, 255, 0.14);
+  --reflect-corner: rgba(255, 255, 255, 0.1);
+
+  --blob-blue: rgba(120, 149, 255, 0.34);
+  --blob-purple: rgba(167, 139, 250, 0.3);
+  --blob-cyan: rgba(103, 221, 245, 0.16);
+  --grid-line: rgba(255, 255, 255, 0.035);
+}
+
+/* Severity scale, derived from the palette so both themes stay consistent */
+:root,
+[data-theme="dark"],
+[data-theme="light"] {
+  --sev-critical: var(--danger);
+  --sev-high: color-mix(in srgb, var(--danger) 45%, var(--warning));
+  --sev-medium: var(--warning);
+  --sev-low: var(--accent-cyan);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #eef1fa;
+  --background-secondary: #e2e8f7;
+  --glass-primary: rgba(255, 255, 255, 0.62);
+  --glass-secondary: rgba(255, 255, 255, 0.42);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-highlight: rgba(255, 255, 255, 1);
+  --glass-solid: rgba(248, 250, 255, 0.96);
+
+  --accent-blue: #3f5fe0;
+  --accent-purple: #7556e0;
+  --accent-cyan: #0b8fae;
+  --success: #0f9b7f;
+  --warning: #b97a05;
+  --danger: #d6264d;
+
+  --text-primary: #0d1426;
+  --text-secondary: #525c75;
+
+  --shadow-1: rgba(36, 52, 110, 0.1);
+  --shadow-2: rgba(36, 52, 110, 0.16);
+  --shadow-3: rgba(36, 52, 110, 0.2);
+  --reflect-top: rgba(255, 255, 255, 0.9);
+  --reflect-corner: rgba(255, 255, 255, 0.7);
+
+  --blob-blue: rgba(120, 149, 255, 0.4);
+  --blob-purple: rgba(167, 139, 250, 0.32);
+  --blob-cyan: rgba(103, 221, 245, 0.3);
+  --grid-line: rgba(13, 20, 38, 0.04);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+html {
+  background: var(--background);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent-blue) 45%, transparent);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* Liquid glass surface                                                */
+/* ------------------------------------------------------------------ */
+@layer components {
+.glass {
+  --mx: 50%;
+  --my: 0%;
+  position: relative;
+  isolation: isolate;
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(150deg, var(--glass-primary), var(--glass-secondary));
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 28px rgba(255, 255, 255, 0.03),
+    0 1px 2px var(--shadow-1),
+    0 12px 32px -10px var(--shadow-2),
+    0 36px 70px -28px var(--shadow-3);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease,
+    box-shadow 0.45s ease;
+}
+
+/* Soft light reflection across the top edge */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--reflect-top) 0%, rgba(255, 255, 255, 0) 34%),
+    radial-gradient(120% 70% at 0% 0%, var(--reflect-corner), transparent 58%);
+  opacity: 0.8;
+}
+
+/* Cursor-following sheen (set by GlassCard through --mx / --my) */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    380px circle at var(--mx) var(--my),
+    color-mix(in srgb, var(--accent-blue) 20%, transparent),
+    transparent 62%
+  );
+  transition: opacity 0.4s ease;
+}
+
+.glass-hover:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent-blue) 45%, var(--glass-border));
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 32px rgba(255, 255, 255, 0.04),
+    0 1px 2px var(--shadow-1),
+    0 16px 40px -10px var(--shadow-2),
+    0 0 44px -8px color-mix(in srgb, var(--accent-blue) 38%, transparent),
+    0 40px 80px -28px var(--shadow-3);
+}
+
+.glass-hover:hover::after {
+  opacity: 1;
+}
+
+/* Smaller, flatter variant for nested surfaces (list rows, chips) */
+.glass-inset {
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-highlight) 45%, transparent);
+}
+
+[data-theme="light"] .glass-inset {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
+}
+
+/* Fallback: browsers without backdrop-filter get an opaque, readable surface */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-solid);
+  }
+  .glass-inset {
+    background: color-mix(in srgb, var(--glass-solid) 80%, white 4%);
+  }
+}
+
+/* Users who ask for less transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--glass-solid);
+  }
+}
+} /* end @layer components */
+
+/* ------------------------------------------------------------------ */
+/* Dialog + dropdown motion (Radix data-state attributes)              */
+/* ------------------------------------------------------------------ */
+@keyframes glass-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes glass-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.anim-glass[data-state="open"] {
+  animation: glass-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anim-glass[data-state="closed"] {
+  animation: glass-out 0.18s ease-in forwards;
+}
+.anim-fade[data-state="open"] {
+  animation: fade-in 0.25s ease;
+}
+.anim-fade[data-state="closed"] {
+  animation: fade-out 0.18s ease forwards;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion                                                      */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .glass-hover:hover {
+    transform: none;
+  }
+}
