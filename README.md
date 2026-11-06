@@ -8,6 +8,26 @@ npm run dev      # http://localhost:3000
 npm run build
 ```
 
+## Тарифы и возможности
+
+| План | Что входит |
+| --- | --- |
+| Free | Security Score, аудит браузера, чек-лист приватности, проверка сложности паролей, уведомления, история изменений |
+| Premium | Всё из Free + проверка паролей по HIBP, мониторинг доменов, продвинутые отчёты, реферальная программа |
+| Premium Plus | Всё из Premium + расширенные отчёты (HTML/CSV), приоритетная проверка доменов каждые 6 часов, генератор паролей, проверка email и чек-лист data broker |
+
+Оплата **симулируется**: карта не списывается, данные не отправляются. Аккаунт, тариф, счета, домены, уведомления и история хранятся в `localStorage` этого браузера. Это демонстрационный local-first режим, а не продакшен-биллинг.
+
+Подписку можно оформить на `/pricing`, отменить или возобновить в `/account`. Новые страницы: `/passwords`, `/monitoring`, `/notifications`, `/referral`, `/tools`, `/checkout`.
+
+## Переменные окружения
+
+```bash
+# Необязательно. Без ключа проверка email показывает «недоступно»,
+# а проверка паролей через Pwned Passwords k-anonymity работает всегда.
+HIBP_API_KEY=your_key
+```
+
 ## Что здесь реально
 
 В аудите ничего не симулируется. Каждый результат берётся из одного из двух источников:
@@ -21,7 +41,13 @@ npm run build
 
 `/api/network` возвращает публичный IP вызывающего и, если хостинг передаёт это (заголовки Vercel / Cloudflare), страну. Сторонние сервисы не используются, ничего не сохраняется. На localhost возвращается `null`.
 
-История аудитов и ответы чек-листа хранятся в `localStorage` на устройстве.
+Дополнительные API-маршруты:
+
+- `/api/leaks?prefix=ABCDE` — прокси к Have I Been Pwned Pwned Passwords с k-anonymity и `Add-Padding`; полный пароль не отправляется.
+- `/api/domain?name=example.com` — DNS через Cloudflare DNS-over-HTTPS и список утечек домена из HIBP (если доступно).
+- `/api/email-exposure?email=...` — проверка email по HIBP; требует `HIBP_API_KEY`, иначе возвращает `{ available: false }`.
+
+История аудитов, ответы чек-листа, аккаунт, тариф, домены, уведомления и история изменений хранятся в `localStorage` на устройстве.
 
 ## Где что находится
 
@@ -30,14 +56,26 @@ npm run build
 | `app/globals.css` | Токены, поверхность `.glass` (отражение через ::before, блик за курсором через ::after), фолбэки, reduced motion, светлая тема |
 | `components/ui/*` | Стеклянная карточка, кнопки, диалог, выпадающее меню, тост |
 | `components/cards/*` | Семь карточек дашборда |
+| `components/overview-extras.tsx` | Блоки тарифа, уведомлений и быстрых инструментов на главной |
+| `app/passwords`, `app/monitoring`, `app/reports` | Проверка паролей, мониторинг доменов, отчёты |
+| `app/pricing`, `app/checkout`, `app/account` | Тарифы, демо-оплата, профиль и подписка |
+| `app/notifications`, `app/referral`, `app/tools` | Уведомления, рефералы, инструменты Premium Plus |
+| `lib/plans.ts` | Тарифная матрица, лимиты и entitlements |
+| `lib/account.tsx` | Аккаунт, PBKDF2-хэш пароля, подписка, счета, рефералы, сброс данных |
+| `lib/notifications.tsx`, `lib/activity.tsx` | Уведомления и история изменений |
+| `lib/monitoring.tsx` | Домены, DNS/утечки, авто-проверки, лимиты |
+| `lib/password.ts` | Анализ сложности, генератор, SHA-1 и проверка утечек |
+| `lib/report.ts` | JSON, расширенный JSON, HTML и CSV отчёты |
 | `lib/audit.ts` | Сбор данных, чек-лист, подсчёт оценки |
 | `lib/audit-context.tsx` | Состояние, история, запуск и сохранение аудита |
-| `lib/i18n-core.ts` | Словари ru/en и функция перевода |
+| `lib/i18n-core.ts`, `lib/i18n-extra.ts` | Словари ru/en и функция перевода |
 | `lib/i18n.tsx` | Провайдер языка и хук `useI18n()` |
 
 ## Подключение собственного бэкенда
 
 Движок аудита изолирован в `lib/audit.ts` и `lib/audit-context.tsx`. Чтобы использовать свой API или авторизацию, замените `collectSnapshot()` и чтение/запись `localStorage` в `audit-context.tsx`; UI зависит только от формы данных `useAudit()`.
+
+Для реального биллинга и аккаунтов точки замены — `lib/account.tsx` (`signUp`, `signIn`, `subscribe`, `cancelSubscription`, `resetAll`) и маршруты в `app/api/*`. Провайдеры `MonitoringProvider` и `NotificationsProvider` можно оставить как клиентский кэш, а проверки перенести на сервер.
 
 ## Доступность и фолбэки
 

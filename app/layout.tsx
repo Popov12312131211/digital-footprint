@@ -9,6 +9,10 @@ import { ToastProvider } from "@/components/ui/toast";
 import { AuditProvider } from "@/lib/audit-context";
 import { LocaleProvider, localeInitScript } from "@/lib/i18n";
 import { ThemeProvider, themeInitScript } from "@/lib/theme";
+import { NotificationsProvider } from "@/lib/notifications";
+import { ActivityProvider } from "@/lib/activity";
+import { AccountProvider } from "@/lib/account";
+import { MonitoringProvider } from "@/lib/monitoring";
 
 const sans = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-sans", display: "swap" });
 const display = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-display", display: "swap" });
@@ -35,14 +39,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <LocaleProvider>
             <ToastProvider>
-              <AuditProvider>
-                <Background />
-                <Header />
-                <main className="mx-auto w-full max-w-6xl px-4 pb-32 pt-28 sm:px-6 md:pb-20 md:pt-32">
-                  <PageTransition>{children}</PageTransition>
-                </main>
-                <AuditDialog />
-              </AuditProvider>
+              <NotificationsProvider>
+                <ActivityProvider>
+                  <AccountProvider>
+                    <MonitoringProvider>
+                      <AuditProvider>
+                        <Background />
+                        <Header />
+                        <main className="mx-auto w-full max-w-6xl px-4 pb-32 pt-28 sm:px-6 md:pb-20 md:pt-32">
+                          <PageTransition>{children}</PageTransition>
+                        </main>
+                        <AuditDialog />
+                      </AuditProvider>
+                    </MonitoringProvider>
+                  </AccountProvider>
+                </ActivityProvider>
+              </NotificationsProvider>
             </ToastProvider>
           </LocaleProvider>
         </ThemeProvider>

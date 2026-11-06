@@ -8,6 +8,7 @@ import { NetworkCard } from "@/components/cards/network-card";
 import { DeviceCard } from "@/components/cards/device-card";
 import { FootprintCard } from "@/components/cards/footprint-card";
 import { HistoryCard } from "@/components/cards/history-card";
+import { OverviewExtras, OverviewTools } from "@/components/overview-extras";
 import { useI18n } from "@/lib/i18n";
 
 export default function OverviewPage() {
@@ -15,6 +16,9 @@ export default function OverviewPage() {
   return (
     <>
       <Hero />
+
+      <OverviewExtras />
+      <OverviewTools />
 
       <h2 className="sr-only">{t("nav.overview")}</h2>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">

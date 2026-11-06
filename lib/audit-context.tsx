@@ -11,6 +11,8 @@ import {
   type Snapshot,
 } from "@/lib/audit";
 import { useI18n } from "@/lib/i18n";
+import { useNotifications } from "@/lib/notifications";
+import { useActivity } from "@/lib/activity";
 
 const HISTORY_KEY = "df-audits-v1";
 const ANSWERS_KEY = "df-checklist-v1";
@@ -63,6 +65,8 @@ function write(key: string, value: unknown): boolean {
 
 export function AuditProvider({ children }: { children: React.ReactNode }) {
   const { locale } = useI18n();
+  const { push } = useNotifications();
+  const { add: addActivity } = useActivity();
   const [snapshot, setSnapshot] = React.useState<Snapshot | null>(null);
   const [answers, setAnswers] = React.useState<ChecklistAnswers>({});
   const [history, setHistory] = React.useState<AuditSummary[]>([]);
@@ -141,11 +145,23 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
       setSavedId(result.id);
       setStorageOk(write(HISTORY_KEY, nextHistory));
       setLastRun({ result, previous: prev });
+
+      if (prev && prev.score !== result.score) {
+        const event = {
+          kind: "score" as const,
+          titleKey: result.score < prev.score ? "notification.scoreDown.title" : "notification.scoreUp.title",
+          descKey: result.score < prev.score ? "notification.scoreDown.desc" : "notification.scoreUp.desc",
+          params: { previous: prev.score, score: result.score },
+          href: "/reports",
+        };
+        push(event);
+        addActivity(event);
+      }
     } finally {
       runningRef.current = false;
       setScanning(false);
     }
-  }, [locale]);
+  }, [locale, push, addActivity]);
 
   const clearHistory = React.useCallback(() => {
     historyRef.current = [];

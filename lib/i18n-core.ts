@@ -3,6 +3,8 @@
  * Russian is the primary interface language; English is the alternative.
  */
 
+import { extraEn, extraRu } from "@/lib/i18n-extra";
+
 export type Locale = "ru" | "en";
 
 export const DEFAULT_LOCALE: Locale = "ru";
@@ -594,6 +596,9 @@ const ru: Dict = {
   "checklistItem.auto-updates.rec":
     "Включите автоматические обновления браузера и операционной системы.",
 };
+
+Object.assign(en, extraEn);
+Object.assign(ru, extraRu);
 
 const dictionaries: Record<Locale, Dict> = { en, ru };
 

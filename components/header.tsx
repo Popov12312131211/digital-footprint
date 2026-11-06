@@ -6,16 +6,22 @@ import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Bell,
+  CreditCard,
   Download,
-  Fingerprint,
-  LayoutDashboard,
   FileBarChart,
+  Gift,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
   Moon,
+  Radar,
   ScanSearch,
   Shield,
+  Sparkles,
   Sun,
   Trash2,
   UserRound,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,20 +40,40 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/toast";
-import { severityVar } from "@/components/common";
 import { useAudit } from "@/lib/audit-context";
 import { recommendations } from "@/lib/audit";
 import { useI18n } from "@/lib/i18n";
 import { downloadReport } from "@/lib/report";
 import { useTheme } from "@/lib/theme";
-import { cn } from "@/lib/utils";
+import { useAccount } from "@/lib/account";
+import { useNotifications, type NotificationKind } from "@/lib/notifications";
+import { cn, formatDateTime } from "@/lib/utils";
 
 export const NAV = [
   { href: "/", labelKey: "nav.overview", shortKey: "nav.overview", icon: LayoutDashboard },
   { href: "/audit", labelKey: "nav.audit", shortKey: "nav.auditShort", icon: ScanSearch },
-  { href: "/privacy", labelKey: "nav.privacy", shortKey: "nav.privacy", icon: Fingerprint },
+  { href: "/passwords", labelKey: "nav.passwords", shortKey: "nav.passwordsShort", icon: KeyRound },
+  { href: "/monitoring", labelKey: "nav.monitoring", shortKey: "nav.monitoringShort", icon: Radar },
   { href: "/reports", labelKey: "nav.reports", shortKey: "nav.reports", icon: FileBarChart },
+  { href: "/pricing", labelKey: "nav.pricing", shortKey: "nav.pricing", icon: CreditCard },
 ] as const;
+
+const MOBILE_NAV = [
+  { href: "/", labelKey: "nav.overview", shortKey: "nav.overview", icon: LayoutDashboard },
+  { href: "/audit", labelKey: "nav.audit", shortKey: "nav.auditShort", icon: ScanSearch },
+  { href: "/passwords", labelKey: "nav.passwords", shortKey: "nav.passwordsShort", icon: KeyRound },
+  { href: "/monitoring", labelKey: "nav.monitoring", shortKey: "nav.monitoringShort", icon: Radar },
+  { href: "/account", labelKey: "nav.account", shortKey: "nav.accountShort", icon: UserRound },
+] as const;
+
+const kindColor: Record<NotificationKind, string> = {
+  score: "var(--warning)",
+  breach: "var(--danger)",
+  domain: "var(--accent-blue)",
+  billing: "var(--success)",
+  referral: "var(--accent-purple)",
+  system: "var(--text-secondary)",
+};
 
 export function Header() {
   const pathname = usePathname();
@@ -55,27 +81,28 @@ export function Header() {
   const { theme, toggle } = useTheme();
   const { locale, toggleLocale, t } = useI18n();
   const { current, history, clearHistory } = useAudit();
+  const { profile, planDef, isAuthenticated, signOut, referral } = useAccount();
+  const { items, unread, markRead, markAllRead } = useNotifications();
   const { toast } = useToast();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   const recs = current ? recommendations(current) : [];
+  const recent = [...items].slice(-5).reverse();
 
   return (
     <>
       <header className="fixed inset-x-3 top-3 z-40 sm:inset-x-6 sm:top-5">
         <div className="glass mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 rounded-[26px] px-3 sm:px-4">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 rounded-2xl pr-2" aria-label={t("brand.overview")}>
             <span className="relative grid h-10 w-10 place-items-center rounded-[14px] border border-white/25 bg-[linear-gradient(135deg,rgba(79,107,240,0.9),rgba(124,92,232,0.85))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_20px_-4px_rgba(120,149,255,0.7)]">
               <Shield className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </span>
-            <span className="hidden font-display text-[15px] font-semibold tracking-tight text-ink sm:block">
+            <span className="hidden font-display text-[15px] font-semibold tracking-tight text-ink lg:block">
               Digital Footprint
             </span>
           </Link>
 
-          {/* Primary navigation (tablet and up) */}
-          <nav aria-label={t("nav.primary")} className="hidden items-center gap-1 md:flex">
+          <nav aria-label={t("nav.primary")} className="hidden items-center gap-0.5 md:flex">
             {NAV.map(({ href, labelKey }) => {
               const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
               return (
@@ -84,7 +111,7 @@ export function Header() {
                   href={href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                    "relative rounded-full px-3 py-2 text-[13px] font-medium transition-colors",
                     active ? "text-ink" : "text-ink-2 hover:text-ink",
                   )}
                 >
@@ -101,7 +128,6 @@ export function Header() {
             })}
           </nav>
 
-          {/* Actions */}
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -128,42 +154,88 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   className="relative"
-                  aria-label={t("header.notifications", { count: recs.length })}
+                  aria-label={t("header.notifications", { count: unread + recs.length })}
                 >
                   <Bell className="h-[18px] w-[18px]" />
-                  {recs.length > 0 && (
+                  {unread > 0 ? (
+                    <span
+                      aria-hidden
+                      className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold text-white"
+                      style={{ background: "var(--danger)", boxShadow: "0 0 8px var(--danger)" }}
+                    >
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  ) : recs.length > 0 ? (
                     <span
                       aria-hidden
                       className="absolute right-2 top-2 h-2 w-2 rounded-full"
-                      style={{ background: "var(--danger)", boxShadow: "0 0 8px var(--danger)" }}
+                      style={{ background: "var(--warning)", boxShadow: "0 0 8px var(--warning)" }}
                     />
-                  )}
+                  ) : null}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[min(340px,calc(100vw-2rem))]">
-                <DropdownMenuLabel>{t("header.recommendations")}</DropdownMenuLabel>
-                {recs.length === 0 ? (
+              <DropdownMenuContent className="w-[min(360px,calc(100vw-2rem))]">
+                <DropdownMenuLabel className="flex items-center justify-between gap-2">
+                  <span className="text-[13px] font-medium text-ink">{t("header.notificationsTitle")}</span>
+                  {unread > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        markAllRead();
+                        toast({ title: t("notifications.allRead"), tone: "info" });
+                      }}
+                      className="text-xs font-medium text-blue hover:opacity-80"
+                    >
+                      {t("header.markAllRead")}
+                    </button>
+                  )}
+                </DropdownMenuLabel>
+                {recent.length === 0 ? (
                   <p className="px-3 pb-3 pt-1 text-[13px] leading-relaxed text-ink-2">
-                    {current ? t("header.nothing") : t("header.reading")}
+                    {t("header.noNotifications")}
                   </p>
                 ) : (
-                  recs.slice(0, 4).map((c) => (
-                    <DropdownMenuItem key={c.id} asChild>
-                      <Link href={c.source === "self-reported" ? "/audit#checklist" : "/privacy"} className="items-start">
+                  recent.map((n) => (
+                    <DropdownMenuItem key={n.id} asChild>
+                      <Link
+                        href={n.href ?? "/notifications"}
+                        onClick={() => markRead(n.id)}
+                        className="items-start"
+                      >
                         <span
                           aria-hidden
                           className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: severityVar[c.severity!] }}
+                          style={{ background: kindColor[n.kind], opacity: n.read ? 0.35 : 1 }}
                         />
-                        <span className="min-w-0">
-                          <span className="block text-[13px] font-medium">{c.label}</span>
-                          <span className="block text-xs text-ink-2">
-                            {t("header.tapToReview", { severity: t(`severity.${c.severity!}`) })}
+                        <span className="min-w-0 flex-1">
+                          <span className={cn("block text-[13px]", n.read ? "font-normal text-ink-2" : "font-medium text-ink")}>
+                            {t(n.titleKey, n.params)}
+                          </span>
+                          {n.descKey && (
+                            <span className="mt-0.5 block text-xs leading-snug text-ink-2">
+                              {t(n.descKey, n.params)}
+                            </span>
+                          )}
+                          <span className="mt-1 block text-[11px] text-ink-2">
+                            {formatDateTime(n.createdAt, locale)}
                           </span>
                         </span>
                       </Link>
                     </DropdownMenuItem>
                   ))
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/notifications">
+                    <Bell className="h-4 w-4 text-ink-2" /> {t("header.viewAll")}
+                  </Link>
+                </DropdownMenuItem>
+                {recs.length > 0 && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/audit">
+                      <Sparkles className="h-4 w-4 text-warning" /> {t("header.recommendations")}
+                    </Link>
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -174,15 +246,81 @@ export function Header() {
                   className="glass-inset ml-1 grid h-10 w-10 place-items-center rounded-full text-ink transition-transform active:scale-95"
                   aria-label={t("header.profile")}
                 >
-                  <UserRound className="h-[18px] w-[18px]" />
+                  {isAuthenticated ? (
+                    <span className="text-xs font-semibold uppercase">
+                      {(profile?.name ?? profile?.email ?? "?").slice(0, 2)}
+                    </span>
+                  ) : (
+                    <UserRound className="h-[18px] w-[18px]" />
+                  )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>
-                  <span className="block text-[13px] font-medium text-ink">{t("header.thisDevice")}</span>
-                  <span className="block text-xs">{t("header.storedOnly")}</span>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent className="w-[min(280px,calc(100vw-2rem))]">
+                {isAuthenticated ? (
+                  <>
+                    <DropdownMenuLabel>
+                      <span className="block text-[13px] font-medium text-ink">{profile?.name}</span>
+                      <span className="block truncate text-xs">{profile?.email}</span>
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-[color:var(--glass-border)] px-2 py-0.5 text-[11px] text-ink">
+                        {t(planDef.nameKey)}
+                      </span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/account">
+                        <UserRound className="h-4 w-4 text-ink-2" /> {t("header.account")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/account#billing">
+                        <CreditCard className="h-4 w-4 text-ink-2" /> {t("header.billing")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/referral">
+                        <Gift className="h-4 w-4 text-ink-2" /> {t("header.referral")}
+                        {referral && referral.credits > 0 && (
+                          <span className="ml-auto text-[11px] text-ink-2">{referral.credits}</span>
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/tools">
+                        <Wrench className="h-4 w-4 text-ink-2" /> {t("nav.tools")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/pricing">
+                        <CreditCard className="h-4 w-4 text-ink-2" /> {t("nav.pricing")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuLabel>
+                      <span className="block text-[13px] font-medium text-ink">{t("header.thisDevice")}</span>
+                      <span className="block text-xs">{t("header.storedOnly")}</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/account">
+                        <UserRound className="h-4 w-4 text-ink-2" /> {t("header.signIn")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/pricing">
+                        <CreditCard className="h-4 w-4 text-ink-2" /> {t("nav.pricing")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/tools">
+                        <Wrench className="h-4 w-4 text-ink-2" /> {t("nav.tools")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem
                   onSelect={() => {
                     downloadReport(current, history);
@@ -191,24 +329,33 @@ export function Header() {
                 >
                   <Download className="h-4 w-4 text-ink-2" /> {t("header.download")}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={history.length === 0}
-                  onSelect={() => setConfirmOpen(true)}
-                >
+                <DropdownMenuItem disabled={history.length === 0} onSelect={() => setConfirmOpen(true)}>
                   <Trash2 className="h-4 w-4 text-ink-2" /> {t("header.clearHistory")}
                 </DropdownMenuItem>
+                {isAuthenticated && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        signOut();
+                        toast({ title: t("toast.signedOut"), tone: "info" });
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 text-ink-2" /> {t("header.signOut")}
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </header>
 
-      {/* Bottom tab bar (mobile) */}
       <nav
         aria-label={t("nav.primary")}
-        className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 gap-1 rounded-[26px] p-1.5 md:hidden"
+        className="glass fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 gap-1 rounded-[26px] p-1.5 md:hidden"
       >
-        {NAV.map(({ href, shortKey, icon: Icon }) => {
+        {MOBILE_NAV.map(({ href, shortKey, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
