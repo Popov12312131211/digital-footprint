@@ -136,32 +136,10 @@ export function hasFeature(plan: PlanId, feature: FeatureKey): boolean {
   return planOf(plan).features.includes(feature);
 }
 
-export function planRank(plan: PlanId): number {
-  return PLAN_ORDER.indexOf(plan);
-}
-
-export function isAtLeast(plan: PlanId, minimum: PlanId): boolean {
-  return planRank(plan) >= planRank(minimum);
-}
-
-export function nextPlan(plan: PlanId): PlanId | null {
-  const i = planRank(plan);
-  return i >= 0 && i < PLAN_ORDER.length - 1 ? PLAN_ORDER[i + 1] : null;
-}
-
 export function formatRub(value: number, locale: "ru" | "en"): string {
   return new Intl.NumberFormat(locale === "ru" ? "ru-RU" : "en-US", {
     style: "currency",
     currency: "RUB",
     maximumFractionDigits: 0,
   }).format(value);
-}
-
-export function intervalLabelKey(interval: Interval): string {
-  return interval === "monthly" ? "common.month" : "common.year";
-}
-
-export function minPlanFor(feature: FeatureKey): PlanId {
-  const found = PLAN_ORDER.find((id) => PLANS[id].features.includes(feature));
-  return found ?? "premium-plus";
 }

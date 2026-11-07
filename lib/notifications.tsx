@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { newId } from "@/lib/utils";
+import { STORAGE_KEYS, readJson, removeStored, writeJson } from "@/lib/storage";
 import type { TranslateParams } from "@/lib/i18n-core";
 
 export type NotificationKind = "score" | "breach" | "domain" | "billing" | "referral" | "system";
@@ -36,28 +37,18 @@ interface NotificationsContextValue {
   clear: () => void;
 }
 
-const STORAGE_KEY = "df-notifications-v1";
+const STORAGE_KEY = STORAGE_KEYS.notifications;
 const MAX_ITEMS = 100;
 
 const NotificationsContext = React.createContext<NotificationsContextValue | null>(null);
 
 function readStored(): AppNotification[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as AppNotification[];
-    return Array.isArray(parsed) ? parsed.slice(-MAX_ITEMS) : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJson<AppNotification[]>(STORAGE_KEY, []);
+  return Array.isArray(parsed) ? parsed.slice(-MAX_ITEMS) : [];
 }
 
 function writeStored(items: AppNotification[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(-MAX_ITEMS)));
-  } catch {
-    /* storage may be blocked; notifications stay in memory for this session */
-  }
+  writeJson(STORAGE_KEY, items.slice(-MAX_ITEMS));
 }
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
@@ -116,11 +107,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   const clear = React.useCallback(() => {
     commit([]);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* nothing to remove */
-    }
+    removeStored(STORAGE_KEY);
   }, [commit]);
 
   const unread = items.filter((n) => !n.read).length;

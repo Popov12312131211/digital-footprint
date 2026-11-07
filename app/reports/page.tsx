@@ -28,7 +28,7 @@ export default function ReportsPage() {
   const { items: activity, add: addActivity } = useActivity();
   const { items: domains } = useMonitoring();
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const extras: ReportExtras = {
     plan: t(planDef.nameKey),
@@ -53,6 +53,23 @@ export default function ReportsPage() {
     network: t("network.title"),
     issues: t("reports.issues"),
     noData: t("reports.noAuditData"),
+    status: t("reports.status"),
+    detail: t("reports.detail"),
+    domain: t("reports.domain"),
+    dns: t("reports.dns"),
+    breaches: t("reports.breaches"),
+    date: t("reports.date"),
+    type: t("reports.type"),
+    event: t("reports.event"),
+    statusPass: t("audit.status.pass"),
+    statusWarn: t("audit.status.warn"),
+    statusFail: t("audit.status.fail"),
+    statusInfo: t("audit.status.info"),
+    statusUnknown: t("audit.status.unknown"),
+    generatedLocally: t("reports.generatedLocally"),
+    invited: t("reports.invited"),
+    credits: t("reports.credits"),
+    lang: locale,
   };
 
   const run = (build: () => void) => {

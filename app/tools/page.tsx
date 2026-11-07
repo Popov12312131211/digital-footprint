@@ -20,9 +20,10 @@ import { useToast } from "@/components/ui/toast";
 import { useAccount } from "@/lib/account";
 import { useI18n } from "@/lib/i18n";
 import { analyzePassword, generatePassword, type GeneratorOptions } from "@/lib/password";
+import { STORAGE_KEYS, readJson, writeJson } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
-const CHECKLIST_KEY = "df-tools-checklist-v1";
+const CHECKLIST_KEY = STORAGE_KEYS.toolsChecklist;
 
 interface EmailBreach {
   name: string;
@@ -57,12 +58,9 @@ export default function ToolsPage() {
   const [checked, setChecked] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CHECKLIST_KEY);
-      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-      if (Array.isArray(parsed)) setChecked(parsed.filter((x): x is string => typeof x === "string"));
-    } catch {
-      /* checklist starts empty */
+    const parsed = readJson<unknown[]>(CHECKLIST_KEY, []);
+    if (Array.isArray(parsed)) {
+      setChecked(parsed.filter((x): x is string => typeof x === "string"));
     }
   }, []);
 
@@ -77,11 +75,7 @@ export default function ToolsPage() {
   const toggle = (key: string) => {
     setChecked((current) => {
       const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
-      try {
-        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next));
-      } catch {
-        /* still applies in this session */
-      }
+      writeJson(CHECKLIST_KEY, next);
       return next;
     });
   };

@@ -1,4 +1,4 @@
-import type { AuditResult, AuditSummary } from "@/lib/audit";
+﻿import type { AuditResult, AuditSummary } from "@/lib/audit";
 import type { ActivityEvent } from "@/lib/activity";
 import type { DomainRecord } from "@/lib/monitoring";
 
@@ -26,6 +26,23 @@ export interface ReportLabels {
   network: string;
   issues: string;
   noData: string;
+  status: string;
+  detail: string;
+  domain: string;
+  dns: string;
+  breaches: string;
+  date: string;
+  type: string;
+  event: string;
+  statusPass: string;
+  statusWarn: string;
+  statusFail: string;
+  statusInfo: string;
+  statusUnknown: string;
+  generatedLocally: string;
+  invited: string;
+  credits: string;
+  lang: string;
 }
 
 const DEFAULT_LABELS: ReportLabels = {
@@ -45,7 +62,39 @@ const DEFAULT_LABELS: ReportLabels = {
   network: "Network",
   issues: "Issues",
   noData: "No data",
+  status: "Status",
+  detail: "Detail",
+  domain: "Domain",
+  dns: "DNS",
+  breaches: "Breaches",
+  date: "Date",
+  type: "Type",
+  event: "Event",
+  statusPass: "Passed",
+  statusWarn: "Review",
+  statusFail: "Failed",
+  statusInfo: "Info",
+  statusUnknown: "Not answered",
+  generatedLocally: "Generated locally. No data was uploaded.",
+  invited: "invited",
+  credits: "credits",
+  lang: "en",
 };
+
+function statusLabel(labels: ReportLabels, status: string): string {
+  switch (status) {
+    case "pass":
+      return labels.statusPass;
+    case "warn":
+      return labels.statusWarn;
+    case "fail":
+      return labels.statusFail;
+    case "info":
+      return labels.statusInfo;
+    default:
+      return labels.statusUnknown;
+  }
+}
 
 function baseReport(current: AuditResult | null, history: AuditSummary[]) {
   return {
@@ -152,7 +201,7 @@ export function downloadHtmlReport(
         .map(
           (check) => `<tr>
             <td>${esc(check.label)}</td>
-            <td><span class="status ${esc(check.status)}">${esc(check.status)}</span></td>
+            <td><span class="status ${esc(check.status)}">${esc(statusLabel(l, check.status))}</span></td>
             <td>${esc(check.detail)}</td>
             <td>${esc(check.recommendation ?? "—")}</td>
           </tr>`,
@@ -180,7 +229,7 @@ export function downloadHtmlReport(
     .join("");
 
   const html = `<!doctype html>
-<html lang="en">
+<html lang="${esc(l.lang)}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -231,7 +280,7 @@ export function downloadHtmlReport(
 
   <h2>${esc(l.checks)}</h2>
   <table>
-    <thead><tr><th>${esc(l.checks)}</th><th>Status</th><th>Detail</th><th>${esc(l.recommendations)}</th></tr></thead>
+    <thead><tr><th>${esc(l.checks)}</th><th>${esc(l.status)}</th><th>${esc(l.detail)}</th><th>${esc(l.recommendations)}</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
 
@@ -240,27 +289,27 @@ export function downloadHtmlReport(
   <h2>${esc(l.domains)}</h2>
   ${
     domains
-      ? `<table><thead><tr><th>Domain</th><th>Status</th><th>DNS</th><th>Breaches</th></tr></thead><tbody>${domains}</tbody></table>`
+      ? `<table><thead><tr><th>${esc(l.domain)}</th><th>${esc(l.status)}</th><th>${esc(l.dns)}</th><th>${esc(l.breaches)}</th></tr></thead><tbody>${domains}</tbody></table>`
       : `<p class="muted">${esc(l.noData)}</p>`
   }
 
   <h2>${esc(l.activity)}</h2>
   ${
     activity
-      ? `<table><thead><tr><th>Date</th><th>Type</th><th>Event</th></tr></thead><tbody>${activity}</tbody></table>`
+      ? `<table><thead><tr><th>${esc(l.date)}</th><th>${esc(l.type)}</th><th>${esc(l.event)}</th></tr></thead><tbody>${activity}</tbody></table>`
       : `<p class="muted">${esc(l.noData)}</p>`
   }
 
   ${
     extras.referral
-      ? `<h2>${esc(l.referral)}</h2><p class="muted">${esc(extras.referral.code)} · ${extras.referral.invited} invited · ${extras.referral.credits} credits</p>`
+      ? `<h2>${esc(l.referral)}</h2><p class="muted">${esc(extras.referral.code)} · ${extras.referral.invited} ${esc(l.invited)} · ${extras.referral.credits} ${esc(l.credits)}</p>`
       : ""
   }
 
   <h2>${esc(l.history)}</h2>
   ${
     history.length
-      ? `<table><thead><tr><th>Date</th><th>${esc(l.score)}</th><th>${esc(l.coverage)}</th></tr></thead><tbody>${history
+      ? `<table><thead><tr><th>${esc(l.date)}</th><th>${esc(l.score)}</th><th>${esc(l.coverage)}</th></tr></thead><tbody>${history
           .slice(-30)
           .reverse()
           .map(
@@ -271,7 +320,7 @@ export function downloadHtmlReport(
       : `<p class="muted">${esc(l.noData)}</p>`
   }
 
-  <p class="muted" style="margin-top:28px">Generated locally. No data was uploaded.</p>
+  <p class="muted" style="margin-top:28px">${esc(l.generatedLocally)}</p>
 </main>
 </body>
 </html>`;

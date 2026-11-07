@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { STORAGE_KEYS, writeRaw } from "@/lib/storage";
 
 export type Theme = "dark" | "light";
 
@@ -11,7 +12,7 @@ interface ThemeContextValue {
 
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
-const STORAGE_KEY = "df-theme";
+const STORAGE_KEY = STORAGE_KEYS.theme;
 
 /** Runs before first paint (inlined in <head>) so there is no flash of the wrong theme. */
 export const themeInitScript = `(function(){try{var t=localStorage.getItem("${STORAGE_KEY}");if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})();`;
@@ -28,11 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme((prev) => {
       const next: Theme = prev === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        /* storage may be blocked; theme still applies for this session */
-      }
+      writeRaw(STORAGE_KEY, next);
       return next;
     });
   }, []);

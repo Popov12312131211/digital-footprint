@@ -106,90 +106,19 @@ export type ChecklistGroup = "two-factor" | "passwords" | "accounts";
 export interface ChecklistItem {
   id: string;
   group: ChecklistGroup;
-  label: string;
-  hint: string;
   severity: Severity;
   weight: number;
-  recommendation: string;
 }
 
 export const CHECKLIST: ChecklistItem[] = [
-  {
-    id: "2fa-email",
-    group: "two-factor",
-    label: "Two-factor sign-in on my main email",
-    hint: "Your email can reset every other account.",
-    severity: "critical",
-    weight: 5,
-    recommendation:
-      "Turn on two-factor sign-in for your main email first. Prefer an authenticator app or a security key over SMS.",
-  },
-  {
-    id: "2fa-other",
-    group: "two-factor",
-    label: "Two-factor sign-in on banking and social accounts",
-    hint: "Covers accounts that hold money or your identity.",
-    severity: "high",
-    weight: 4,
-    recommendation:
-      "Enable two-factor sign-in on banking, social and cloud storage accounts, starting with the one you would miss most.",
-  },
-  {
-    id: "unique-passwords",
-    group: "passwords",
-    label: "Every important account has its own password",
-    hint: "One leaked password should not open a second account.",
-    severity: "high",
-    weight: 4,
-    recommendation:
-      "Replace reused passwords, starting with email, banking and any account that stores payment details.",
-  },
-  {
-    id: "password-manager",
-    group: "passwords",
-    label: "I use a password manager",
-    hint: "Makes long, unique passwords practical.",
-    severity: "medium",
-    weight: 2,
-    recommendation:
-      "Set up a password manager and move your most important accounts into it first.",
-  },
-  {
-    id: "recovery-current",
-    group: "accounts",
-    label: "Recovery email and phone are up to date",
-    hint: "Lets you get back in, and keeps others out.",
-    severity: "low",
-    weight: 1,
-    recommendation:
-      "Check the recovery email and phone number on your main accounts and remove ones you no longer own.",
-  },
-  {
-    id: "app-permissions",
-    group: "accounts",
-    label: "I reviewed apps connected to my accounts this year",
-    hint: "Old “Sign in with…” connections keep their access.",
-    severity: "medium",
-    weight: 2,
-    recommendation:
-      "Open the connected-apps page of your Google, Apple and social accounts and remove anything you no longer use.",
-  },
-  {
-    id: "auto-updates",
-    group: "accounts",
-    label: "Browser and OS updates install automatically",
-    hint: "Most attacks use bugs that already have a fix.",
-    severity: "low",
-    weight: 1,
-    recommendation: "Turn on automatic updates for your browser and operating system.",
-  },
+  { id: "2fa-email", group: "two-factor", severity: "critical", weight: 5 },
+  { id: "2fa-other", group: "two-factor", severity: "high", weight: 4 },
+  { id: "unique-passwords", group: "passwords", severity: "high", weight: 4 },
+  { id: "password-manager", group: "passwords", severity: "medium", weight: 2 },
+  { id: "recovery-current", group: "accounts", severity: "low", weight: 1 },
+  { id: "app-permissions", group: "accounts", severity: "medium", weight: 2 },
+  { id: "auto-updates", group: "accounts", severity: "low", weight: 1 },
 ];
-
-export const GROUP_LABELS: Record<ChecklistGroup, string> = {
-  "two-factor": "Two-factor authentication",
-  passwords: "Password hygiene",
-  accounts: "Account security",
-};
 
 /* ------------------------------------------------------------------ */
 /* Collectors (browser only)                                           */

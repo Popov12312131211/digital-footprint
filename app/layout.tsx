@@ -17,10 +17,35 @@ import { MonitoringProvider } from "@/lib/monitoring";
 const sans = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-sans", display: "swap" });
 const display = Manrope({ subsets: ["latin", "cyrillic"], variable: "--font-display", display: "swap" });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const description =
+  "Понимайте свой цифровой след, находите риски приватности и защищайте свою онлайн-личность.";
+
 export const metadata: Metadata = {
-  title: "Digital Footprint",
-  description:
-    "Понимайте свой цифровой след, находите риски приватности и защищайте свою онлайн-личность.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Digital Footprint",
+    template: "%s · Digital Footprint",
+  },
+  description,
+  applicationName: "Digital Footprint",
+  openGraph: {
+    type: "website",
+    siteName: "Digital Footprint",
+    title: "Digital Footprint",
+    description,
+    locale: "ru_RU",
+    alternateLocale: ["en_US"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Digital Footprint",
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {

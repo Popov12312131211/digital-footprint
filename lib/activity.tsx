@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { newId } from "@/lib/utils";
+import { STORAGE_KEYS, readJson, removeStored, writeJson } from "@/lib/storage";
 import type { TranslateParams } from "@/lib/i18n-core";
 
 export type ActivityKind =
@@ -39,28 +40,18 @@ interface ActivityContextValue {
   clear: () => void;
 }
 
-const STORAGE_KEY = "df-activity-v1";
+const STORAGE_KEY = STORAGE_KEYS.activity;
 const MAX_ITEMS = 250;
 
 const ActivityContext = React.createContext<ActivityContextValue | null>(null);
 
 function readStored(): ActivityEvent[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ActivityEvent[];
-    return Array.isArray(parsed) ? parsed.slice(-MAX_ITEMS) : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJson<ActivityEvent[]>(STORAGE_KEY, []);
+  return Array.isArray(parsed) ? parsed.slice(-MAX_ITEMS) : [];
 }
 
 function writeStored(items: ActivityEvent[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(-MAX_ITEMS)));
-  } catch {
-    /* storage may be blocked; activity stays in memory for this session */
-  }
+  writeJson(STORAGE_KEY, items.slice(-MAX_ITEMS));
 }
 
 export function ActivityProvider({ children }: { children: React.ReactNode }) {
@@ -102,11 +93,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
 
   const clear = React.useCallback(() => {
     commit([]);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* nothing to remove */
-    }
+    removeStored(STORAGE_KEY);
   }, [commit]);
 
   const value = React.useMemo<ActivityContextValue>(

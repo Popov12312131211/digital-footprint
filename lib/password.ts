@@ -323,10 +323,6 @@ export async function sha1Hex(value: string): Promise<string> {
   return toHex(digest).toUpperCase();
 }
 
-export function hashPrefix(value: string): string {
-  return value.slice(0, 5);
-}
-
 export interface BreachResult {
   breached: boolean;
   count: number;

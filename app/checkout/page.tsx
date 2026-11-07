@@ -27,6 +27,13 @@ export default function CheckoutPage() {
   const [cvc, setCvc] = React.useState("123");
   const [error, setError] = React.useState<string | null>(null);
   const [processing, setProcessing] = React.useState(false);
+  const timerRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -55,7 +62,8 @@ export default function CheckoutPage() {
       return;
     }
     setProcessing(true);
-    window.setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
       subscribe(planId, interval);
       setProcessing(false);
       toast({

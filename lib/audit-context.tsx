@@ -13,9 +13,10 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { useNotifications } from "@/lib/notifications";
 import { useActivity } from "@/lib/activity";
+import { STORAGE_KEYS, readJson, removeStored, writeJson } from "@/lib/storage";
 
-const HISTORY_KEY = "df-audits-v1";
-const ANSWERS_KEY = "df-checklist-v1";
+const HISTORY_KEY = STORAGE_KEYS.audits;
+const ANSWERS_KEY = STORAGE_KEYS.checklist;
 const MAX_HISTORY = 30;
 
 export interface LastRun {
@@ -45,24 +46,6 @@ interface AuditContextValue {
 
 const AuditContext = React.createContext<AuditContextValue | null>(null);
 
-function read<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function write(key: string, value: unknown): boolean {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export function AuditProvider({ children }: { children: React.ReactNode }) {
   const { locale } = useI18n();
   const { push } = useNotifications();
@@ -82,8 +65,8 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
 
   // Load persisted state and take the first snapshot.
   React.useEffect(() => {
-    const a = read<ChecklistAnswers>(ANSWERS_KEY, {});
-    const h = read<AuditSummary[]>(HISTORY_KEY, []);
+    const a = readJson<ChecklistAnswers>(ANSWERS_KEY, {});
+    const h = readJson<AuditSummary[]>(HISTORY_KEY, []);
     answersRef.current = a;
     historyRef.current = h;
     setAnswers(a);
@@ -121,7 +104,7 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
     else next[id] = value;
     answersRef.current = next;
     setAnswers(next);
-    setStorageOk(write(ANSWERS_KEY, next));
+    setStorageOk(writeJson(ANSWERS_KEY, next));
     setSavedId(null); // inputs changed, so the saved audit no longer matches
   }, []);
 
@@ -143,7 +126,7 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
       setSnapshot(fresh);
       setHistory(nextHistory);
       setSavedId(result.id);
-      setStorageOk(write(HISTORY_KEY, nextHistory));
+      setStorageOk(writeJson(HISTORY_KEY, nextHistory));
       setLastRun({ result, previous: prev });
 
       if (prev && prev.score !== result.score) {
@@ -168,11 +151,7 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
     setHistory([]);
     setSavedId(null);
     setLastRun(null);
-    try {
-      localStorage.removeItem(HISTORY_KEY);
-    } catch {
-      /* nothing to remove */
-    }
+    removeStored(HISTORY_KEY);
   }, []);
 
   const value: AuditContextValue = {

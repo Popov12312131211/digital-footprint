@@ -21,6 +21,14 @@ import {
   startOfDay,
   startOfMonth,
 } from "@/lib/utils";
+import {
+  STORAGE_KEYS,
+  clearDataStorage,
+  readJson,
+  readRaw,
+  removeStored,
+  writeJson,
+} from "@/lib/storage";
 
 export interface Profile {
   name: string;
@@ -75,7 +83,12 @@ export type SubscriptionStatus = "active" | "canceled" | "expired" | "none";
 
 interface AuthResult {
   ok: boolean;
-  error?: "invalidEmail" | "weakPassword" | "emailTaken" | "invalidCredentials";
+  error?:
+    | "invalidEmail"
+    | "weakPassword"
+    | "emailTaken"
+    | "accountExists"
+    | "invalidCredentials";
 }
 
 interface ReferralResult {
@@ -111,7 +124,7 @@ interface AccountContextValue {
   resetAll: () => void;
 }
 
-const STORAGE_KEY = "df-account-v1";
+const STORAGE_KEY = STORAGE_KEYS.account;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const AccountContext = React.createContext<AccountContextValue | null>(null);
@@ -126,24 +139,14 @@ function emptyUsage(): UsageState {
 }
 
 function readStored(): StoredAccount | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredAccount;
-    if (!parsed?.profile?.email || !parsed.passwordHash) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+  const parsed = readJson<StoredAccount | null>(STORAGE_KEY, null);
+  if (!parsed?.profile?.email || !parsed.passwordHash) return null;
+  return parsed;
 }
 
 function writeStored(value: StoredAccount | null) {
-  try {
-    if (value) localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-    else localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    /* storage may be blocked; the session still works in memory */
-  }
+  if (value) writeJson(STORAGE_KEY, value);
+  else removeStored(STORAGE_KEY);
 }
 
 function randomCode(): string {
@@ -269,7 +272,12 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       const cleanEmail = normalizeEmail(email);
       if (!validEmail(cleanEmail)) return { ok: false, error: "invalidEmail" };
       if (password.length < 8) return { ok: false, error: "weakPassword" };
-      if (state?.profile?.email === cleanEmail) return { ok: false, error: "emailTaken" };
+      if (state?.profile) {
+        return {
+          ok: false,
+          error: state.profile.email === cleanEmail ? "emailTaken" : "accountExists",
+        };
+      }
       const salt = randomSalt();
       const passwordHash = await derivePassword(password, salt);
       const next: StoredAccount = {
@@ -513,37 +521,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (!state?.signedIn) return;
-    let pending: string | null = null;
-    try {
-      pending = localStorage.getItem("df-pending-referral");
-    } catch {
-      return;
-    }
+    const pending = readRaw(STORAGE_KEYS.pendingReferral);
     if (!pending) return;
-    try {
-      localStorage.removeItem("df-pending-referral");
-    } catch {
-      /* the apply below still runs for this session */
-    }
+    removeStored(STORAGE_KEYS.pendingReferral);
     applyReferralCode(pending);
   }, [state?.signedIn, applyReferralCode]);
 
   const resetAll = React.useCallback(() => {
-    try {
-      [
-        "df-account-v1",
-        "df-notifications-v1",
-        "df-activity-v1",
-        "df-domains-v1",
-        "df-audits-v1",
-        "df-checklist-v1",
-        "df-password-health-v1",
-        "df-tools-checklist-v1",
-        "df-pending-referral",
-      ].forEach((key) => localStorage.removeItem(key));
-    } catch {
-      /* nothing to remove */
-    }
+    clearDataStorage();
     commit(null);
     if (typeof window !== "undefined") window.location.assign("/");
   }, [commit]);

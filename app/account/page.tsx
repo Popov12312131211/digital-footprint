@@ -36,6 +36,7 @@ import { useAudit } from "@/lib/audit-context";
 import { useI18n } from "@/lib/i18n";
 import { formatRub, planOf, type PlanId } from "@/lib/plans";
 import { downloadReport } from "@/lib/report";
+import { STORAGE_KEYS, writeRaw } from "@/lib/storage";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
 export default function AccountPage() {
@@ -76,11 +77,7 @@ function AuthPanel() {
     if (target && target.startsWith("/")) setNext(target);
     const ref = params.get("ref");
     if (ref && /^DF-[A-Z0-9]{4,10}$/i.test(ref)) {
-      try {
-        localStorage.setItem("df-pending-referral", ref.toUpperCase());
-      } catch {
-        /* the code can still be applied manually */
-      }
+      writeRaw(STORAGE_KEYS.pendingReferral, ref.toUpperCase());
     }
   }, []);
 

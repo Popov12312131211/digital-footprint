@@ -10,8 +10,9 @@ import {
   type Locale,
   type TranslateParams,
 } from "@/lib/i18n-core";
+import { STORAGE_KEYS, readRaw, writeRaw } from "@/lib/storage";
 
-const STORAGE_KEY = "df-locale";
+const STORAGE_KEY = STORAGE_KEYS.locale;
 
 /** Runs before first paint so the document language matches the saved choice. */
 export const localeInitScript = `(function(){try{var l=localStorage.getItem("${STORAGE_KEY}");if(l!=="ru"&&l!=="en"){l="${DEFAULT_LOCALE}"}document.documentElement.setAttribute("lang",l)}catch(e){}})();`;
@@ -31,12 +32,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = React.useState<Locale>(DEFAULT_LOCALE);
 
   React.useEffect(() => {
-    let saved: string | null = null;
-    try {
-      saved = localStorage.getItem(STORAGE_KEY);
-    } catch {
-      /* storage may be blocked; the default stays */
-    }
+    const saved = readRaw(STORAGE_KEY);
     if (isLocale(saved)) {
       setLocaleState(saved);
       document.documentElement.setAttribute("lang", saved);
@@ -46,11 +42,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const setLocale = React.useCallback((next: Locale) => {
     setLocaleState(next);
     document.documentElement.setAttribute("lang", next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      /* the choice still applies for this session */
-    }
+    writeRaw(STORAGE_KEY, next);
   }, []);
 
   const toggleLocale = React.useCallback(() => {

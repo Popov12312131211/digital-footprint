@@ -4,6 +4,7 @@ import * as React from "react";
 import { useAccount } from "@/lib/account";
 import { useNotifications } from "@/lib/notifications";
 import { useActivity } from "@/lib/activity";
+import { STORAGE_KEYS, readJson, writeJson } from "@/lib/storage";
 import { newId } from "@/lib/utils";
 
 export type DomainStatus = "pending" | "ok" | "warning" | "error";
@@ -50,7 +51,7 @@ interface MonitoringContextValue {
   checkAll: () => Promise<void>;
 }
 
-const STORAGE_KEY = "df-domains-v1";
+const STORAGE_KEY = STORAGE_KEYS.domains;
 const DOMAIN = /^(?=.{1,253}$)(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/i;
 
 const MonitoringContext = React.createContext<MonitoringContextValue | null>(null);
@@ -65,22 +66,12 @@ function normalizeDomain(value: string): string {
 }
 
 function readStored(): DomainRecord[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as DomainRecord[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJson<DomainRecord[]>(STORAGE_KEY, []);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 function writeStored(items: DomainRecord[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    /* storage may be blocked; monitoring stays in memory for this session */
-  }
+  writeJson(STORAGE_KEY, items);
 }
 
 function statusFor(record: Pick<DomainRecord, "addresses" | "breaches">): DomainStatus {
