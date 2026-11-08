@@ -32,7 +32,10 @@ export function OverviewExtras() {
   const { items: domains, limit } = useMonitoring();
   const { unread, items: notifications } = useNotifications();
   const { items: activity } = useActivity();
-  const recent = [...notifications].sort((a, b) => b.createdAt - a.createdAt).slice(0, 3);
+  const recent = React.useMemo(
+    () => [...notifications].sort((a, b) => b.createdAt - a.createdAt).slice(0, 3),
+    [notifications],
+  );
 
   return (
     <div className="mb-5 grid gap-5 lg:grid-cols-3">

@@ -154,21 +154,36 @@ export function AuditProvider({ children }: { children: React.ReactNode }) {
     removeStored(HISTORY_KEY);
   }, []);
 
-  const value: AuditContextValue = {
-    ready: current !== null,
-    scanning,
-    current,
-    previous,
-    history,
-    answers,
-    storageOk,
-    lastRun,
-    dialogOpen,
-    setDialogOpen,
-    startAudit,
-    answer,
-    clearHistory,
-  };
+  const value = React.useMemo<AuditContextValue>(
+    () => ({
+      ready: current !== null,
+      scanning,
+      current,
+      previous,
+      history,
+      answers,
+      storageOk,
+      lastRun,
+      dialogOpen,
+      setDialogOpen,
+      startAudit,
+      answer,
+      clearHistory,
+    }),
+    [
+      current,
+      scanning,
+      previous,
+      history,
+      answers,
+      storageOk,
+      lastRun,
+      dialogOpen,
+      startAudit,
+      answer,
+      clearHistory,
+    ],
+  );
 
   return <AuditContext.Provider value={value}>{children}</AuditContext.Provider>;
 }

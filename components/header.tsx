@@ -86,8 +86,8 @@ export function Header() {
   const { toast } = useToast();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
-  const recs = current ? recommendations(current) : [];
-  const recent = [...items].slice(-5).reverse();
+  const recs = React.useMemo(() => (current ? recommendations(current) : []), [current]);
+  const recent = React.useMemo(() => [...items].slice(-5).reverse(), [items]);
 
   return (
     <>

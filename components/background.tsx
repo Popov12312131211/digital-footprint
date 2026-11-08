@@ -26,15 +26,29 @@ export function Background() {
         }}
       />
 
-      {/* blurred orbs (these drift slowly) */}
-      <div className="absolute -left-[12%] -top-[18%] h-[620px] w-[620px] animate-drift rounded-full bg-[color:var(--accent-blue)] opacity-[0.22] blur-[130px]" />
+      {/* soft colour blooms (no blur filter: the gradient itself is the blur) */}
       <div
-        className="absolute -bottom-[22%] -right-[10%] h-[680px] w-[680px] animate-drift rounded-full bg-[color:var(--accent-purple)] opacity-[0.2] blur-[140px]"
-        style={{ animationDelay: "-9s" }}
+        className="absolute -left-[12%] -top-[18%] h-[620px] w-[620px] animate-drift rounded-full opacity-[0.55] will-change-transform"
+        style={{
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--accent-blue) 38%, transparent) 0%, transparent 70%)",
+        }}
       />
       <div
-        className="absolute left-[38%] top-[36%] h-[420px] w-[420px] animate-drift rounded-full bg-[color:var(--accent-cyan)] opacity-[0.1] blur-[120px]"
-        style={{ animationDelay: "-4s" }}
+        className="absolute -bottom-[22%] -right-[10%] h-[680px] w-[680px] animate-drift rounded-full opacity-[0.5] will-change-transform"
+        style={{
+          animationDelay: "-9s",
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--accent-purple) 34%, transparent) 0%, transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute left-[38%] top-[36%] h-[420px] w-[420px] animate-drift rounded-full opacity-30 will-change-transform"
+        style={{
+          animationDelay: "-4s",
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--accent-cyan) 32%, transparent) 0%, transparent 70%)",
+        }}
       />
 
       {/* faint abstract forms */}

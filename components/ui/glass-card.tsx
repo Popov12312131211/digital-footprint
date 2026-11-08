@@ -10,18 +10,48 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
   ({ className, interactive = true, onPointerMove, ...props }, ref) => {
+    const elementRef = React.useRef<HTMLDivElement | null>(null);
+    const frameRef = React.useRef<number | null>(null);
+    const pointRef = React.useRef<{ x: number; y: number } | null>(null);
+
+    const setRef = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        elementRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+
+    React.useEffect(() => {
+      return () => {
+        if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      };
+    }, []);
+
     const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
-      if (interactive) {
-        const r = e.currentTarget.getBoundingClientRect();
-        e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
-        e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+      // The sheen re-paints a large gradient, and touch pointers have no hover
+      // state. Coalesce updates into one frame to keep scrolling smooth.
+      if (interactive && e.pointerType === "mouse") {
+        pointRef.current = { x: e.clientX, y: e.clientY };
+        if (frameRef.current === null) {
+          frameRef.current = requestAnimationFrame(() => {
+            frameRef.current = null;
+            const el = elementRef.current;
+            const point = pointRef.current;
+            if (!el || !point) return;
+            const rect = el.getBoundingClientRect();
+            el.style.setProperty("--mx", `${point.x - rect.left}px`);
+            el.style.setProperty("--my", `${point.y - rect.top}px`);
+          });
+        }
       }
       onPointerMove?.(e);
     };
 
     return (
       <div
-        ref={ref}
+        ref={setRef}
         onPointerMove={handleMove}
         className={cn("glass p-5 sm:p-6", interactive && "glass-hover", className)}
         {...props}

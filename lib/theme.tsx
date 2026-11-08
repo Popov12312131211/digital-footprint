@@ -34,7 +34,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>;
+  const value = React.useMemo(() => ({ theme, toggle }), [theme, toggle]);
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
